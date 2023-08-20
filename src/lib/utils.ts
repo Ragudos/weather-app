@@ -4,7 +4,7 @@ const convertTemp = (temperature: number, weatherTemperature: "Celsius" | "Faren
   }
 
   if (weatherTemperature === "Farenheit") {
-    return ((temperature * 9 / 5) + 32)
+    return ((temperature * 9 / 5) + 32).toFixed(2)
   }
 }
 
