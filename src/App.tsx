@@ -117,14 +117,14 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {permissions === "prompt" && !loading && (
+          {permissions === "prompt" && !error && !loading && (
             <>
               <h2>Grant permission to access your location</h2>
               <p>Please give access to your geo location to show the current weather.</p>
             </>
           )}
 
-          {permissions === "denied" && !loading && (
+          {permissions === "denied" && !error && !loading && (
             <>
               <h2>Permission denied</h2>
               <p>We cannot show the current weather without your general location.</p>
@@ -138,7 +138,7 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {permissions === "granted" && !loading && weatherDetails && (
+          {permissions === "granted" && !loading && !error && weatherDetails && (
             <>
               <h2>{weatherDetails.weather[0].main} in {weatherDetails.sys.country}</h2>
               <div>
