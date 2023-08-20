@@ -1,6 +1,8 @@
 import "./App.css";
 
 import { useEffect, useState } from "react";
+import usePermissions from "./use-permissions";
+import { convertTemp } from "./lib/utils";
 
 type GeoLocationCoordinates = {
   latitude: number;
@@ -32,52 +34,15 @@ type WeatherDetails = {
 
 // can split the logic to separate components, but will have them here instead.
 const useGetWeatherDetails = () => {
-  const [permissions, setPermissions] = useState<"granted" | "prompt" | "denied">();
-
   const [geoLocation, setGeoLocation] = useState<GeoLocationCoordinates>();
 
   const [weatherDetails, setWeatherDetails] = useState<WeatherDetails>();
   const [error, setError] = useState<Error | GeolocationPositionError>();
   const [loading, setLoading] = useState(false);
 
+  const permissions = usePermissions({ name: "geolocation", setLoading, setError })
+
   const [weatherTemperature, setWeatherTemperature] = useState<"Celsius" | "Farenheit">("Celsius");
-
-  useEffect(() => {
-    setLoading(true);
-    navigator.permissions.query({ name: "geolocation" }).then((result) => {
-      if (result.state === "prompt") {
-        setPermissions("prompt")
-      }
-
-      if (result.state === "granted") {
-        setPermissions("granted");
-      }
-
-      if (result.state === "denied") {
-        setPermissions("denied");
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      result.addEventListener("change", (result: any) => {
-        if (result.target?.state === "prompt") {
-          setPermissions("prompt")
-        }
-
-        if (result.target?.state === "granted") {
-          setPermissions("granted");
-        }
-
-        if (result.target?.state === "denied") {
-          setPermissions("denied");
-        }
-      });
-
-      setLoading(false);
-    }).catch((error) => {
-      setError(error);
-      setLoading(false);
-    });
-  }, []);
 
   useEffect(() => {
     if (permissions === "granted") {
@@ -98,7 +63,7 @@ const useGetWeatherDetails = () => {
   useEffect(() => {
     if (geoLocation) {
       setLoading(true);
-      fetch(`https://weather-proxy.freecodecamp.rocks/api/current?lat=${geoLocation.latitude}&lon=${geoLocation.longitude}`)
+      fetch(`${import.meta.env.VITE_WEATHER_API}?lat=${geoLocation.latitude}&lon=${geoLocation.longitude}`)
         .then((response) => {
           response.json()
             .then((data: WeatherDetails) => {
@@ -107,19 +72,18 @@ const useGetWeatherDetails = () => {
             .catch((error) => {
               setError(error)
             })
-            .finally(() => {
-              setLoading(false)
-            })
         })
         .catch((error) => {
           setError(error)
+        })
+        .finally(() => {
+          setLoading(false)
         })
     }
   }, [geoLocation]);
 
   return {
     permissions,
-    setPermissions,
     weatherDetails,
     error,
     weatherTemperature,
@@ -130,16 +94,6 @@ const useGetWeatherDetails = () => {
 
 const App: React.FC = () => {
   const { weatherDetails, weatherTemperature, setWeatherTemperature, loading, permissions, error } = useGetWeatherDetails();
-
-  const convertTemp = (temperature: number) => {
-    if (weatherTemperature === "Celsius") {
-      return temperature
-    }
-
-    if (weatherTemperature === "Farenheit") {
-      return ((temperature * 9/5) + 32)
-    }
-  }
 
   return (
     <>
@@ -197,7 +151,7 @@ const App: React.FC = () => {
               <div className="misc-details">
                 <div>
                   Temperature:&nbsp;
-                  <span>{convertTemp(weatherDetails.main.temp) + " " + weatherTemperature[0]}</span>
+                  <span>{convertTemp(weatherDetails.main.temp, weatherTemperature) + " " + weatherTemperature[0]}</span>
                 </div>
                 <div>
                   Humidity:&nbsp;
